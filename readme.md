@@ -191,7 +191,7 @@ c.AddFlag(&cli.Flag{
 })
 ```
 
-Handlers can also be set on flags. A flag handler will be passed the flag, and the command which had that flag passed to it. Setting the `Exclusive` property on the given `cli.Flag` type to `true` will prevent the command which passed the flag from running. This is useful if you want to display usage information for that command via `--help` flag for example without having the command itself be run.
+Handlers can also be set on flags. A flag handler will be passed the flag, and the command which had that flag passed to it. Setting the `Exclusive` property on the given `cli.Flag` type to `true` will prevent the command which passed the flag from running. This is useful if you want to display usage information for that command via a `--help` flag without having the command itself be run.
 
 ```go
 c := cli.New()
