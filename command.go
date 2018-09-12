@@ -1,11 +1,13 @@
 package cli
 
+import "errors"
+
 type commands map[string]*Command
 
 type commandHandler func(c Command)
 
 type Command struct {
-	shouldRun bool
+	hasExclusive bool
 
 	Name string
 
@@ -27,6 +29,8 @@ func (c *Command) Command(name string, handler commandHandler) *Command {
 }
 
 func (c *Command) AddFlag(f *Flag) {
+	c.hasExclusive = f.Exclusive && f.Handler != nil
+
 	if f.global {
 		for _, cmd := range c.Commands {
 			cmd.AddFlag(f)
@@ -34,4 +38,26 @@ func (c *Command) AddFlag(f *Flag) {
 	}
 
 	c.Flags[f.Name] = f
+}
+
+func (c Command) Run() error {
+	shouldRun := true
+
+	for _, f := range c.Flags {
+		if f.Handler != nil {
+			f.Handler(*f, c)
+
+			shouldRun = !f.Exclusive
+		}
+	}
+
+	if shouldRun {
+		if c.Handler == nil {
+			return errors.New("command '" + c.Name + "' not found")
+		}
+
+		c.Handler(c)
+	}
+
+	return nil
 }
