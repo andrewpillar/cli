@@ -63,7 +63,7 @@ func TestCommandNotFound(t *testing.T) {
 
 	cli.Command("hello", nil)
 
-	err := cli.Run([]string{"foo"})
+	err := cli.Run([]string{"hello", "foo"})
 
 	if err == nil {
 		t.Error("expected command to fail")
