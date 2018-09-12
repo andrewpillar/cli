@@ -44,7 +44,7 @@ func (c Command) Run() error {
 	shouldRun := true
 
 	for _, f := range c.Flags {
-		if f.Handler != nil {
+		if f.Handler != nil && f.isSet {
 			f.Handler(*f, c)
 
 			shouldRun = !f.Exclusive
@@ -53,6 +53,10 @@ func (c Command) Run() error {
 
 	if shouldRun {
 		if c.Handler == nil {
+			if c.Name == "" {
+				return errors.New("no command to run")
+			}
+
 			return errors.New("command '" + c.Name + "' not found")
 		}
 
