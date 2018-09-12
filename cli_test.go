@@ -63,7 +63,7 @@ func TestCommandNotFound(t *testing.T) {
 
 	cli.Command("hello", nil)
 
-	err := cli.Run([]string{})
+	err := cli.Run([]string{"foo"})
 
 	if err == nil {
 		t.Error("expected command to fail")
@@ -227,7 +227,7 @@ func TestFlagHandler(t *testing.T) {
 	}
 }
 
-func TestExclusiveTestHandler(t *testing.T) {
+func TestExclusiveFlagHandler(t *testing.T) {
 	cli := New()
 
 	cli.AddFlag(&Flag{
@@ -244,8 +244,8 @@ func TestExclusiveTestHandler(t *testing.T) {
 		},
 	})
 
-	cli.Main(func(c Command) {})
-	cli.Command("foo", func(c Command) {})
+	cli.Main(nil)
+	cli.Command("foo", nil)
 
 	if err := cli.Run([]string{"--help"}); err != nil {
 		t.Error(err)
