@@ -34,21 +34,18 @@ func addCommand(name string, handler commandHandler, cmds commands) *Command {
 func findCommand(args args, cmds commands, main *Command) (*Command, error) {
 	if len(args) == 0 {
 		if main == nil {
-			return nil, errors.New("failed to find a command to run")
+			return nil, errors.New("failed to find a command")
 		}
 
 		return main, nil
 	}
 
-	name := ""
+	name := args[0]
 
-	for _, a := range args {
-		if strings.HasPrefix(a, "--") || strings.HasPrefix(a, "-") {
-			continue
-		}
+	if strings.HasPrefix(name, "--") || strings.HasPrefix(name, "-") {
+		main.Args = args
 
-		name = a
-		break
+		return main, nil
 	}
 
 	cmd, ok := cmds[name]
@@ -56,12 +53,6 @@ func findCommand(args args, cmds commands, main *Command) (*Command, error) {
 	if !ok {
 		if main == nil {
 			return nil, errors.New("command '" + name + "' not found")
-		}
-
-		// Assume we have a sub command that will be run, and set the name of
-		// main to the sub command we want to run.
-		if main.Handler == nil {
-			main.Name = name
 		}
 
 		main.Args = args
