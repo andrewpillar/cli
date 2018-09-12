@@ -34,11 +34,7 @@ func addCommand(name string, handler commandHandler, cmds commands) *Command {
 func findCommand(args args, cmds commands, main *Command) (*Command, error) {
 	if len(args) == 0 {
 		if main == nil {
-			return nil, errors.New("command not found")
-		}
-
-		if main.Handler == nil {
-			return nil, errors.New("command not found")
+			return nil, errors.New("failed to find a command to run")
 		}
 
 		return main, nil
@@ -62,8 +58,10 @@ func findCommand(args args, cmds commands, main *Command) (*Command, error) {
 			return nil, errors.New("command '" + name + "' not found")
 		}
 
+		// Assume we have a sub command that will be run, and set the name of
+		// main to the sub command we want to run.
 		if main.Handler == nil {
-			return nil, errors.New("command '" + name + "' not found")
+			main.Name = name
 		}
 
 		main.Args = args
@@ -138,22 +136,10 @@ func (c *Cli) parseLong(i int, arg string, cmd *Command, flag *Flag) error {
 
 		flag.Value = val
 
-		if flag.Handler != nil {
-			flag.Handler(*flag, *cmd)
-
-			cmd.shouldRun = !flag.Exclusive
-		}
-
 		return nil
 	}
 
 	flag.isSet = true
-
-	if flag.Handler != nil {
-		flag.Handler(*flag, *cmd)
-
-		cmd.shouldRun = !flag.Exclusive
-	}
 
 	return nil
 }
@@ -172,22 +158,10 @@ func (c *Cli) parseShort(i int, arg string, cmd *Command, flag *Flag) error {
 
 		flag.Value = val
 
-		if flag.Handler != nil {
-			flag.Handler(*flag, *cmd)
-
-			cmd.shouldRun = !flag.Exclusive
-		}
-
 		return nil
 	}
 
 	flag.isSet = true
-
-	if flag.Handler != nil {
-		flag.Handler(*flag, *cmd)
-
-		cmd.shouldRun = !flag.Exclusive
-	}
 
 	return nil
 }
@@ -215,9 +189,5 @@ func (c *Cli) Run(args_ []string) error {
 		}
 	}
 
-	if cmd.shouldRun {
-		cmd.Handler(*cmd)
-	}
-
-	return nil
+	return cmd.Run()
 }
