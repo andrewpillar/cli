@@ -51,7 +51,7 @@ func findCommand(args args, cmds commands, main *Command) (*Command, error) {
 	cmd, ok := cmds[name]
 
 	if !ok {
-		if main == nil {
+		if main == nil || main.Handler == nil {
 			return nil, errors.New("command '" + name + "' not found")
 		}
 
