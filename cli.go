@@ -19,8 +19,14 @@ func New() *Cli {
 	return &Cli{cmds: newCommands(), flags: newFlags()}
 }
 
-func addCommand(name string, handler commandHandler, cmds commands) *Command {
+func addCommand(
+	name string,
+	parent *Command,
+	handler commandHandler,
+	cmds commands,
+) *Command {
 	cmd := &Command{
+		Parent:   parent,
 		Name:     name,
 		Args:     args([]string{}),
 		Flags:    newFlags(),
@@ -74,7 +80,7 @@ func (c *Cli) AddFlag(f *Flag) {
 }
 
 func (c *Cli) Command(name string, handler commandHandler) *Command {
-	return addCommand(name, handler, c.cmds)
+	return addCommand(name, nil, handler, c.cmds)
 }
 
 func (c *Cli) Main(handler commandHandler) *Command {

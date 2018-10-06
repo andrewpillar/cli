@@ -1,6 +1,9 @@
 package cli
 
-import "errors"
+import (
+	"errors"
+	"strings"
+)
 
 type commands map[string]*Command
 
@@ -8,6 +11,8 @@ type commandHandler func(c Command)
 
 type Command struct {
 	hasExclusive bool
+
+	Parent *Command
 
 	Name string
 
@@ -25,7 +30,7 @@ func newCommands() commands {
 }
 
 func (c *Command) Command(name string, handler commandHandler) *Command {
-	return addCommand(name, handler, c.Commands)
+	return addCommand(name, c, handler, c.Commands)
 }
 
 func (c *Command) AddFlag(f *Flag) {
@@ -38,6 +43,20 @@ func (c *Command) AddFlag(f *Flag) {
 	}
 
 	c.Flags[f.Name] = f
+}
+
+func (c Command) FullName() string {
+	commands := make([]string, 0)
+
+	next := &c
+
+	for next != nil {
+		commands = append([]string{next.Name}, commands...)
+
+		next = next.Parent
+	}
+
+	return strings.Join(commands, "-")
 }
 
 func (c Command) Run(nilHandler commandHandler) error {

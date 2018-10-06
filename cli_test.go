@@ -280,3 +280,22 @@ func TestNilCommandHandler(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestCommandFullName(t *testing.T) {
+	cli := New()
+
+	fullName := "remote-add"
+
+	cli.NilHandler(func(c Command) {
+		actual := c.FullName()
+
+		if actual != fullName {
+			t.Errorf("expected fullname to be %s got %s\n", fullName, actual)
+		}
+	})
+
+	cmd := cli.Command("remote", nil)
+	cmd.Command("add", nil)
+
+	cli.Run([]string{"remote", "add"})
+}
