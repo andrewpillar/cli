@@ -11,6 +11,8 @@ type Cli struct {
 	flags flags
 
 	main *Command
+
+	nilHandler commandHandler
 }
 
 func New() *Cli {
@@ -84,6 +86,10 @@ func (c *Cli) Main(handler commandHandler) *Command {
 	}
 
 	return c.main
+}
+
+func (c *Cli) NilHandler(handler commandHandler) {
+	c.nilHandler = handler
 }
 
 func (c *Cli) parseFlag(i int, arg string, cmd *Command) error {
@@ -180,5 +186,5 @@ func (c *Cli) Run(args_ []string) error {
 		}
 	}
 
-	return cmd.Run()
+	return cmd.Run(c.nilHandler)
 }

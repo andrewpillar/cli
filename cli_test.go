@@ -69,6 +69,8 @@ func TestCommandNotFound(t *testing.T) {
 		t.Error("expected command to fail")
 	}
 
+	cli.Run([]string{"hello"})
+
 	fmt.Println(err)
 }
 
@@ -252,6 +254,29 @@ func TestExclusiveFlagHandler(t *testing.T) {
 	}
 
 	if err := cli.Run([]string{"foo", "--help"}); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestNilCommandHandler(t *testing.T) {
+	cli := New()
+
+	cli.NilHandler(func(c Command) {
+		fmt.Println("usage:", c.Name)
+	})
+
+	cli.Main(nil)
+
+	cmd := cli.Command("remote", nil)
+	cmd.Command("add", func(c Command) {
+		fmt.Println("adding remote:", c.Args.Get(0))
+	})
+
+	if err := cli.Run([]string{}); err != nil {
+		t.Error(err)
+	}
+
+	if err := cli.Run([]string{"remote"}); err != nil {
 		t.Error(err)
 	}
 }

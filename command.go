@@ -40,10 +40,10 @@ func (c *Command) AddFlag(f *Flag) {
 	c.Flags[f.Name] = f
 }
 
-func (c Command) Run() error {
+func (c Command) Run(nilHandler commandHandler) error {
 	shouldRun := true
 
-	for _, f := range c.Flags {
+	for _,f := range c.Flags {
 		if f.Handler != nil && f.isSet {
 			f.Handler(*f, c)
 
@@ -53,11 +53,11 @@ func (c Command) Run() error {
 
 	if shouldRun {
 		if c.Handler == nil {
-			if c.Name == "" {
-				return errors.New("no command to run")
-			}
+			c.Handler = nilHandler
+		}
 
-			return errors.New("command '" + c.Name + "' not found")
+		if c.Handler == nil {
+			return errors.New("no command to run")
 		}
 
 		c.Handler(c)
