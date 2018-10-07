@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 )
 
@@ -10,7 +9,7 @@ func TestMainCommand(t *testing.T) {
 	cli := New()
 
 	cli.Main(func(c Command) {
-		fmt.Println("main command")
+		fmt.Println("TestMainCommand")
 	})
 
 	if err := cli.Run([]string{}); err != nil {
@@ -22,92 +21,55 @@ func TestCommand(t *testing.T) {
 	cli := New()
 
 	cli.Command("hello", func(c Command) {
-		fmt.Println("Hello " + c.Args.Get(0))
+		fmt.Println("hello", c.Args.Get(0))
 	})
 
 	if err := cli.Run([]string{"hello", "world"}); err != nil {
 		t.Error(err)
 	}
-}
 
-func TestCommandArgs(t *testing.T) {
-	cli := New()
-
-	cli.Command("hello", func(c Command) {
-		for _, a := range c.Args {
-			fmt.Println("Hello " + a)
-		}
-	})
-
-	if err := cli.Run([]string{"hello", "world", "foo", "bar"}); err != nil {
-		t.Error(err)
+	if err := cli.Run([]string{"foo", "world"}); err == nil {
+		t.Errorf("expected command 'foo world' to fail, it did not\n")
+	} else {
+		fmt.Println(err)
 	}
 }
 
 func TestSubCommand(t *testing.T) {
 	cli := New()
 
-	cmd := cli.Command("remote", func(c Command) {})
-
+	cmd := cli.Command("remote", nil)
 	cmd.Command("add", func(c Command) {
-		fmt.Println("add " + c.Args.Get(0))
+		fmt.Println("remote add", c.Args.Get(0))
 	})
 
 	if err := cli.Run([]string{"remote", "add", "origin"}); err != nil {
 		t.Error(err)
 	}
-}
 
-func TestCommandNotFound(t *testing.T) {
-	cli := New()
-
-	cli.Command("hello", nil)
-
-	err := cli.Run([]string{"hello", "foo"})
-
-	if err == nil {
-		t.Error("expected command to fail")
+	if err := cli.Run([]string{"remote", "foo", "origin"}); err == nil {
+		t.Errorf("expected command 'remote foo origin' to fail, it did not\n")
+	} else {
+		fmt.Println(err)
 	}
-
-	cli.Run([]string{"hello"})
-
-	fmt.Println(err)
 }
 
-func TestSubCommandNotFound(t *testing.T) {
-	cli := New()
-
-	cmd := cli.Command("remote", nil)
-
-	cmd.Command("add", func(c Command) {
-		fmt.Println("add " + c.Args.Get(0))
-	})
-
-	err := cli.Run([]string{"remote", "foo", "origin"})
-
-	if err == nil {
-		t.Error("expected command to fail")
-	}
-
-	fmt.Println(err)
-}
-
-func TestFlagArg(t *testing.T) {
+func TestFlagArgument(t *testing.T) {
 	cli := New()
 
 	cmd := cli.Command("hello", func(c Command) {
-		cnt, err := c.Flags.GetInt("count")
+		count, err := c.Flags.GetInt("count")
 
 		if err != nil {
 			t.Error(err)
 		}
 
-		if cnt != 5 {
-			t.Errorf("expected count to be 5, it was %d\n", cnt)
+		if count != 5 {
+			t.Errorf("expected '--count' flag to be '5', it was not\n")
 		}
 
-		for i := 0; i < cnt; i++ {
-			fmt.Println("hello " + c.Args.Get(0))
+		for i := 0; i < count; i++ {
+			fmt.Println("hello", c.Args.Get(0))
 		}
 	})
 
@@ -116,7 +78,6 @@ func TestFlagArg(t *testing.T) {
 		Short:    "-c",
 		Long:     "--count",
 		Argument: true,
-		Default:  1,
 	})
 
 	if err := cli.Run([]string{"hello", "world", "-c", "5"}); err != nil {
@@ -132,32 +93,58 @@ func TestFlagArg(t *testing.T) {
 	}
 }
 
-func TestFlagBool(t *testing.T) {
+func TestFlagSliceArgument(t *testing.T) {
 	cli := New()
 
 	cmd := cli.Command("hello", func(c Command) {
-		arg := c.Args.Get(0)
+		names := c.Flags.GetSlice("names", ",")
 
-		if c.Flags.IsSet("uppercase") {
-			arg = strings.ToUpper(arg)
-		} else {
-			t.Errorf("expected uppercase flag to be true, it was false\n")
+		for _, n := range names {
+			fmt.Println("hello", n)
 		}
-
-		fmt.Println("hello " + arg)
 	})
 
 	cmd.AddFlag(&Flag{
-		Name:  "uppercase",
-		Short: "-u",
-		Long:  "--uppercase",
+		Name:     "names",
+		Long:     "--names",
+		Argument: true,
 	})
 
-	if err := cli.Run([]string{"hello", "world", "-u"}); err != nil {
+	if err := cli.Run([]string{"hello", "--names=sam,bill,ted"}); err != nil {
 		t.Error(err)
 	}
+}
 
-	if err := cli.Run([]string{"hello", "world", "--uppercase"}); err != nil {
+func TestFlagDefaultArgument(t *testing.T) {
+	cli := New()
+
+	defaultValue := 1
+
+	cmd := cli.Command("hello", func(c Command) {
+		count, err := c.Flags.GetInt("count")
+
+		if err != nil {
+			t.Error(err)
+		}
+
+		if count != defaultValue {
+			t.Errorf(
+				"expected '--count' flag to be '%d' it was '%d'\n",
+				defaultValue,
+				count,
+			)
+		}
+	})
+
+	cmd.AddFlag(&Flag{
+		Name:     "count",
+		Short:    "-c",
+		Long:     "--count",
+		Argument: true,
+		Default:  defaultValue,
+	})
+
+	if err := cli.Run([]string{"hello", "world"}); err != nil {
 		t.Error(err)
 	}
 }
@@ -166,118 +153,123 @@ func TestGlobalFlag(t *testing.T) {
 	cli := New()
 
 	cli.AddFlag(&Flag{
-		Name:  "help",
-		Short: "-h",
-		Long:  "--help",
+		Name: "help",
+		Long: "--help",
 	})
 
-	cmd := cli.Command("hello", func(c Command) {
+	cli.Command("hello", func(c Command) {
 		if c.Flags.IsSet("help") {
 			fmt.Println("say hello")
+			return
+		} else {
+			t.Errorf("expected flag '--help' to be set on 'hello'\n")
 		}
 	})
 
-	cmd.Command("sub", func(c Command) {
+	cmd := cli.Command("remote", nil)
+	cmd.Command("add", func(c Command) {
 		if c.Flags.IsSet("help") {
-			fmt.Println("this is a sub-command")
+			fmt.Println("add a remote")
+		} else {
+			t.Errorf("expected flag '--help' to be set on 'remote add'\n")
 		}
 	})
-
-	if err := cli.Run([]string{"hello", "-h"}); err != nil {
-		t.Error(err)
-	}
 
 	if err := cli.Run([]string{"hello", "--help"}); err != nil {
 		t.Error(err)
 	}
 
-	if err := cli.Run([]string{"hello", "sub", "--help"}); err != nil {
+	if err := cli.Run([]string{"remote", "add", "--help"}); err != nil {
 		t.Error(err)
 	}
 }
 
-func TestFlagHandler(t *testing.T) {
+func TestGlobalFlagHandler(t *testing.T) {
 	cli := New()
+
+	executed := false
 
 	cli.AddFlag(&Flag{
 		Name:    "help",
-		Short:   "-h",
 		Long:    "--help",
 		Handler: func(f Flag, c Command) {
-			if c.Name == "" {
-				fmt.Println("usage for main command")
-			} else {
-				fmt.Println("usage for " + c.Name)
-			}
+			fmt.Println("usage for command", c.Name)
 		},
 	})
 
-	cli.Main(func(c Command) {
-		fmt.Println("main command")
+	cli.Command("hello", func(c Command) {
+		fmt.Println("hello", c.Args.Get(0))
+
+		executed = true
 	})
 
-	cli.Command("foo", func(c Command) {
-		fmt.Println("foo command")
-	})
-
-	if err := cli.Run([]string{"--help"}); err != nil {
+	if err := cli.Run([]string{"hello", "--help"}); err != nil {
 		t.Error(err)
 	}
 
-	if err := cli.Run([]string{"foo", "--help"}); err != nil {
-		t.Error(err)
+	if !executed {
+		t.Errorf("expected command 'hello' to run\n")
 	}
 }
 
-func TestExclusiveFlagHandler(t *testing.T) {
+func TestExclusiveGlobalFlagHandler(t *testing.T) {
 	cli := New()
+
+	executed := false
 
 	cli.AddFlag(&Flag{
 		Name:      "help",
-		Short:     "-h",
 		Long:      "--help",
 		Exclusive: true,
 		Handler:   func(f Flag, c Command) {
-			if c.Name == "" {
-				fmt.Println("usage for main command")
-			} else {
-				fmt.Println("usage for " + c.Name)
-			}
+			fmt.Println("usage for command", c.Name)
 		},
 	})
 
-	cli.Main(nil)
-	cli.Command("foo", nil)
+	cli.Command("hello", func(c Command) {
+		fmt.Println("hello", c.Args.Get(0))
 
-	if err := cli.Run([]string{"--help"}); err != nil {
+		executed = true
+	})
+
+	if err := cli.Run([]string{"hello", "--help"}); err != nil {
 		t.Error(err)
 	}
 
-	if err := cli.Run([]string{"foo", "--help"}); err != nil {
-		t.Error(err)
+	if executed {
+		t.Errorf("expected command 'hello' to not run\n")
+	}
+}
+
+func TestFlagNotFound(t *testing.T) {
+	cli := New()
+
+	cli.Command("hello", func(c Command) {})
+
+	if err := cli.Run([]string{"hello", "--foo"}); err == nil {
+		t.Errorf("expected 'hello --foo' to fail\n")
 	}
 }
 
 func TestNilCommandHandler(t *testing.T) {
 	cli := New()
 
-	cli.NilHandler(func(c Command) {
-		fmt.Println("usage:", c.Name)
+	executed := false
+
+	cli.NilHandler(func (c Command) {
+		fmt.Println("nil handler", c.Name)
+
+		executed = true
 	})
 
 	cli.Main(nil)
-
-	cmd := cli.Command("remote", nil)
-	cmd.Command("add", func(c Command) {
-		fmt.Println("adding remote:", c.Args.Get(0))
-	})
 
 	if err := cli.Run([]string{}); err != nil {
 		t.Error(err)
 	}
 
-	if err := cli.Run([]string{"remote"}); err != nil {
-		t.Error(err)
+	if !executed {
+		t.Errorf("expected nil handler to execute\n")
 	}
 }
 
@@ -286,16 +278,18 @@ func TestCommandFullName(t *testing.T) {
 
 	fullName := "remote-add"
 
-	cli.NilHandler(func(c Command) {
+	cli.NilHandler(func (c Command) {
 		actual := c.FullName()
 
 		if actual != fullName {
-			t.Errorf("expected fullname to be %s got %s\n", fullName, actual)
+			t.Errorf("expected full name to be %s go %s\n", fullName, actual)
 		}
 	})
 
 	cmd := cli.Command("remote", nil)
 	cmd.Command("add", nil)
 
-	cli.Run([]string{"remote", "add"})
+	if err := cli.Run([]string{"remote", "add"}); err != nil {
+		t.Error(err)
+	}
 }
