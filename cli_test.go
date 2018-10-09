@@ -1,3 +1,4 @@
+// Simple library for building CLI applications in Go
 package cli
 
 import (
@@ -161,9 +162,9 @@ func TestGlobalFlag(t *testing.T) {
 		if c.Flags.IsSet("help") {
 			fmt.Println("say hello")
 			return
-		} else {
-			t.Errorf("expected flag '--help' to be set on 'hello'\n")
 		}
+
+		t.Errorf("expected flag '--help' to be set on 'hello'\n")
 	})
 
 	cmd := cli.Command("remote", nil)
