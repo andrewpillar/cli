@@ -256,7 +256,7 @@ func TestNilCommandHandler(t *testing.T) {
 
 	executed := false
 
-	cli.NilHandler(func (c Command) {
+	cli.NilHandler(func(c Command) {
 		fmt.Println("nil handler", c.Name)
 
 		executed = true
@@ -278,7 +278,7 @@ func TestCommandFullName(t *testing.T) {
 
 	fullName := "remote-add"
 
-	cli.NilHandler(func (c Command) {
+	cli.NilHandler(func(c Command) {
 		actual := c.FullName()
 
 		if actual != fullName {
@@ -297,7 +297,7 @@ func TestCommandFullName(t *testing.T) {
 func TestMultipleSameFlag(t *testing.T) {
 	cli := New()
 
-	cmd := cli.Main(func (c Command) {
+	cmd := cli.Main(func(c Command) {
 		headers := c.Flags.GetAll("header")
 
 		if len(headers) != 3 {
