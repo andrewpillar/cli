@@ -1,3 +1,4 @@
+// Simple library for building CLI applications in Go
 package cli
 
 type args []string
