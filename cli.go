@@ -26,12 +26,12 @@ func addCommand(
 	cmds commands,
 ) *Command {
 	cmd := &Command{
-		Parent:   parent,
-		Name:     name,
-		Args:     args([]string{}),
-		Flags:    newFlags(),
-		Commands: newCommands(),
-		Handler:  handler,
+		Parent:       parent,
+		Name:         name,
+		Args:         args([]string{}),
+		Flags:        newFlags(),
+		Commands:     newCommands(),
+		Handler:      handler,
 	}
 
 	cmds[name] = cmd
@@ -76,7 +76,7 @@ func findCommand(args args, cmds commands, main *Command) (*Command, error) {
 func (c *Cli) AddFlag(f *Flag) {
 	f.global = true
 
-	c.flags[f.Name] = f
+	c.flags.expected[f.Name] = f
 }
 
 func (c *Cli) Command(name string, handler commandHandler) *Command {
@@ -101,7 +101,7 @@ func (c *Cli) NilHandler(handler commandHandler) {
 func (c *Cli) parseFlag(i int, arg string, cmd *Command) error {
 	var flag *Flag
 
-	for _, f := range cmd.Flags {
+	for _, f := range cmd.Flags.expected {
 		if f.Matches(arg) {
 			flag = f
 			break
@@ -113,10 +113,22 @@ func (c *Cli) parseFlag(i int, arg string, cmd *Command) error {
 	}
 
 	if strings.HasPrefix(arg, "--") {
-		return c.parseLong(i, arg, cmd, flag)
+		if err := c.parseLong(i, arg, cmd, flag); err != nil {
+			return err
+		}
+
+		cmd.Flags.putReceived(*flag)
+
+		return nil
 	}
 
-	return c.parseShort(i, arg, cmd, flag)
+	if err := c.parseShort(i, arg, cmd, flag); err != nil {
+		return err
+	}
+
+	cmd.Flags.putReceived(*flag)
+
+	return nil
 }
 
 func (c *Cli) parseLong(i int, arg string, cmd *Command, flag *Flag) error {
@@ -176,7 +188,7 @@ func (c *Cli) Run(args_ []string) error {
 		return err
 	}
 
-	for _, f := range c.flags {
+	for _, f := range c.flags.expected {
 		cmd.AddFlag(f)
 	}
 
