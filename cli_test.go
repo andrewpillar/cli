@@ -293,3 +293,32 @@ func TestCommandFullName(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestMultipleSameFlag(t *testing.T) {
+	cli := New()
+
+	cmd := cli.Main(func (c Command) {
+		headers := c.Flags.GetAll("header")
+
+		if len(headers) != 3 {
+			t.Errorf("expected three header flags\n")
+		}
+
+		for _, h := range headers {
+			fmt.Println(h.Value)
+		}
+	})
+
+	cmd.AddFlag(&Flag{
+		Name:     "header",
+		Short:    "-H",
+		Argument: true,
+		Default:  "",
+	})
+
+	flags := []string{"-H", "foo", "-H", "bar", "-H", "zap"}
+
+	if err := cli.Run(flags); err != nil {
+		t.Error(err)
+	}
+}

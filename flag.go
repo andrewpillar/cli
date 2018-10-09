@@ -5,9 +5,13 @@ import (
 	"strings"
 )
 
-type flags map[string]*Flag
-
 type flagHandler func(f Flag, c Command)
+
+type flags struct {
+	expected map[string]*Flag
+
+	received map[string][]Flag
+}
 
 type Flag struct {
 	isSet bool
@@ -32,7 +36,18 @@ type Flag struct {
 }
 
 func newFlags() flags {
-	return flags(make(map[string]*Flag))
+	return flags{
+		expected: make(map[string]*Flag),
+		received: make(map[string][]Flag),
+	}
+}
+
+func (f *flags) putReceived(received Flag) {
+	f.received[received.Name] = append(f.received[received.Name], received)
+}
+
+func (f flags) GetAll(name string) []Flag {
+	return f.received[name]
 }
 
 func (f flags) GetInt64(name string) (int64, error) {
@@ -56,10 +71,11 @@ func (f flags) GetInt32(name string) (int32, error) {
 }
 
 func (f flags) GetInt(name string) (int, error) {
-	flag, ok := f[name]
+	flag := *f.expected[name]
+	flags := f.GetAll(name)
 
-	if !ok {
-		return 0, nil
+	if len(flags) > 0 {
+		flag = flags[0]
 	}
 
 	if flag.Value == "" {
@@ -84,10 +100,11 @@ func (f flags) GetSlice(name, sep string) []string {
 }
 
 func (f flags) GetString(name string) string {
-	flag, ok := f[name]
+	flag := *f.expected[name]
+	flags := f.GetAll(name)
 
-	if !ok {
-		return ""
+	if len(flags) > 0 {
+		flag = flags[0]
 	}
 
 	if flag.Value == "" {
@@ -102,13 +119,13 @@ func (f flags) GetString(name string) string {
 }
 
 func (f flags) IsSet(name string) bool {
-	flag, ok := f[name]
+	flags := f.GetAll(name)
 
-	if !ok {
+	if len(flags) == 0 {
 		return false
 	}
 
-	return flag.isSet
+	return flags[0].isSet
 }
 
 func (f Flag) Matches(arg string) bool {

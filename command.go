@@ -42,7 +42,7 @@ func (c *Command) AddFlag(f *Flag) {
 		}
 	}
 
-	c.Flags[f.Name] = f
+	c.Flags.expected[f.Name] = f
 }
 
 func (c Command) FullName() string {
@@ -62,11 +62,13 @@ func (c Command) FullName() string {
 func (c Command) Run(nilHandler commandHandler) error {
 	shouldRun := true
 
-	for _,f := range c.Flags {
-		if f.Handler != nil && f.isSet {
-			f.Handler(*f, c)
+	for _, received := range c.Flags.received {
+		flag := received[0]
 
-			shouldRun = !f.Exclusive
+		if flag.Handler != nil && flag.isSet {
+			flag.Handler(flag, c)
+
+			shouldRun = !flag.Exclusive
 		}
 	}
 
