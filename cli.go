@@ -26,12 +26,12 @@ func addCommand(
 	cmds commands,
 ) *Command {
 	cmd := &Command{
-		Parent:       parent,
-		Name:         name,
-		Args:         args([]string{}),
-		Flags:        newFlags(),
-		Commands:     newCommands(),
-		Handler:      handler,
+		Parent:   parent,
+		Name:     name,
+		Args:     args([]string{}),
+		Flags:    newFlags(),
+		Commands: newCommands(),
+		Handler:  handler,
 	}
 
 	cmds[name] = cmd
