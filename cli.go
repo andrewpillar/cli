@@ -1,4 +1,4 @@
-// Simple library for building CLI applications in Go
+// Simple library for building CLI applications in Go.
 package cli
 
 import (
@@ -16,16 +16,13 @@ type Cli struct {
 	nilHandler commandHandler
 }
 
+// New creates a new Cli struct for attaching commands, and flags to. There is
+// no limit to how many of these you can create.
 func New() *Cli {
 	return &Cli{cmds: newCommands(), flags: newFlags()}
 }
 
-func addCommand(
-	name string,
-	parent *Command,
-	handler commandHandler,
-	cmds commands,
-) *Command {
+func addCommand(name string, parent *Command, handler commandHandler, cmds commands) *Command {
 	cmd := &Command{
 		Parent:   parent,
 		Name:     name,
@@ -74,16 +71,25 @@ func findCommand(args args, cmds commands, main *Command) (*Command, error) {
 	return findCommand(cmd.Args, cmd.Commands, cmd)
 }
 
+// AddFlag takes a pointer to a Flag struct, and adds it to the Cli struct
+// marking it as global. This flag will be passed down to every subsequent
+// command added to the Cli struct.
 func (c *Cli) AddFlag(f *Flag) {
 	f.global = true
 
 	c.flags.expected[f.Name] = f
 }
 
+// Command creates a new command for the Cli struct based on the name, and
+// handler given. A pointer to the newly created Command is returned. The name
+// of the command is typically what the user would type in to have the command
+// run.
 func (c *Cli) Command(name string, handler commandHandler) *Command {
 	return addCommand(name, nil, handler, c.cmds)
 }
 
+// Main specifies the main command to run should no initial command be found
+// upon the first run of the application. This only takes a command handler.
 func (c *Cli) Main(handler commandHandler) *Command {
 	c.main = &Command{
 		Args:     args([]string{}),
@@ -95,6 +101,9 @@ func (c *Cli) Main(handler commandHandler) *Command {
 	return c.main
 }
 
+// NilHandler specifies a handler to be used for commands which do not have
+// a handler on them. This is useful if you have mulitple sub-commands that
+// perform actions, but whose parent command does not.
 func (c *Cli) NilHandler(handler commandHandler) {
 	c.nilHandler = handler
 }
@@ -182,6 +191,7 @@ func (c *Cli) parseShort(i int, arg string, cmd *Command, flag *Flag) error {
 	return nil
 }
 
+// Run takes the slice of strings, and parses them as commands and flags.
 func (c *Cli) Run(args_ []string) error {
 	cmd, err := findCommand(args(args_), c.cmds, c.main)
 

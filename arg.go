@@ -1,8 +1,9 @@
-// Simple library for building CLI applications in Go
 package cli
 
 type args []string
 
+// Get the command argument at the given index, or return an empty string if
+// out of bounds.
 func (a args) Get(i int) string {
 	if i >= len(a) {
 		return ""

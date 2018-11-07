@@ -1,4 +1,3 @@
-// Simple library for building CLI applications in Go
 package cli
 
 import (
@@ -19,20 +18,41 @@ type Flag struct {
 
 	global bool
 
+	// Name specifies the name of the flag. This should be a string, and will
+	// be what is used to access the flag when passed to the command's handler.
 	Name string
 
+	// Short specifies the short version of a flag, for example '-h'.
 	Short string
 
+	// Long specifies the long version of a flag, for example '--help'.
 	Long string
 
+	// Argument specifies whether or not the flag takes an argument.
 	Argument bool
 
+	// If the flag takes an argument then the Value property will be set during
+	// parsing of the input arguments.
 	Value string
 
+	// Default specifies the default value the flag should be if no value is
+	// given to the flag. This is an interface, and before accessing the flag's
+	// value you should know what it's expected type should be.
 	Default interface{}
 
+	// Exclusive specifies whether or not a flag with a handler should be
+	// exclusive in its execution. Setting this to true means that no command
+	// will be executed if an exclusive flag, with a handler has been set on
+	// that command, and passed to that command.
+	//
+	// For example, the '--help' flag could be considered an exclusive flag.
+	// When passed to a command you do not want the command itself to be
+	// executed along with the '--help' flag.
 	Exclusive bool
 
+	// Handler specifies the handler for the flag should a flag be given to
+	// a command. This handler will be passed the flag itself, and the command
+	// on which the flag was passed.
 	Handler flagHandler
 }
 
@@ -129,6 +149,8 @@ func (f flags) IsSet(name string) bool {
 	return flags[0].isSet
 }
 
+// Matches determins if the given argument matches against the current flag,
+// based on the short, and long values of the current flag.
 func (f Flag) Matches(arg string) bool {
 	if strings.Contains(arg, "=") {
 		arg = strings.Split(arg, "=")[0]
