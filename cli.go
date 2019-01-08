@@ -7,12 +7,9 @@ import (
 )
 
 type Cli struct {
-	cmds commands
-
-	flags flags
-
-	main *Command
-
+	cmds       commands
+	flags      flags
+	main       *Command
 	nilHandler commandHandler
 }
 
@@ -142,7 +139,7 @@ func (c *Cli) parseFlag(i int, arg string, cmd *Command) error {
 }
 
 func (c *Cli) parseLong(i int, arg string, cmd *Command, flag *Flag) error {
-	cmd.Args.set(i, "")
+	cmd.Args.remove(i)
 
 	if flag.Argument {
 		val := ""
@@ -152,7 +149,7 @@ func (c *Cli) parseLong(i int, arg string, cmd *Command, flag *Flag) error {
 		} else {
 			val = cmd.Args.Get(i + 1)
 
-			cmd.Args.set(i + 1, "")
+			cmd.Args.remove(i + 1)
 		}
 
 		if val == "" && flag.Default == nil {
@@ -170,12 +167,12 @@ func (c *Cli) parseLong(i int, arg string, cmd *Command, flag *Flag) error {
 }
 
 func (c *Cli) parseShort(i int, arg string, cmd *Command, flag *Flag) error {
-	cmd.Args.set(i, "")
+	cmd.Args.remove(i)
 
 	if flag.Argument {
 		val := cmd.Args.Get(i + 1)
 
-		cmd.Args.set(i + 1, "")
+		cmd.Args.remove(i + 1)
 
 		if val == "" && flag.Default == nil {
 			return errors.New("option '" + arg + "' requires an argument")
