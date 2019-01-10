@@ -147,9 +147,7 @@ func (c *Cli) parseLong(i int, arg string, cmd *Command, flag *Flag) error {
 		if strings.Contains(arg, "=") {
 			val = strings.Split(arg, "=")[1]
 		} else {
-			val = cmd.Args.Get(i + 1)
-
-			cmd.Args.remove(i + 1)
+			val = cmd.Args.Get(i)
 		}
 
 		if val == "" && flag.Default == nil {
@@ -170,9 +168,7 @@ func (c *Cli) parseShort(i int, arg string, cmd *Command, flag *Flag) error {
 	cmd.Args.remove(i)
 
 	if flag.Argument {
-		val := cmd.Args.Get(i + 1)
-
-		cmd.Args.remove(i + 1)
+		val := cmd.Args.Get(i)
 
 		if val == "" && flag.Default == nil {
 			return errors.New("option '" + arg + "' requires an argument")
