@@ -174,6 +174,8 @@ func (c *Cli) parseShort(i int, arg string, cmd *Command, flag *Flag) error {
 			return errors.New("option '" + arg + "' requires an argument")
 		}
 
+		cmd.Args.remove(i)
+
 		flag.Value = val
 
 		return nil
