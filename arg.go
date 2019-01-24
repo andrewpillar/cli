@@ -12,10 +12,10 @@ func (a args) Get(i int) string {
 	return a[i]
 }
 
-func (a *args) remove(i int) {
-	if i >= len(*a) || i < 0 {
+func (a *args) set(i int, s string) {
+	if i >= len(*a) {
 		return
 	}
 
-	(*a) = append((*a)[:i], (*a)[i + 1:]...)
+	(*a)[i] = s
 }
