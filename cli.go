@@ -215,11 +215,11 @@ func (c *Cli) Run(args_ []string) error {
 		}
 	}
 
-	args := make([]string, len(cmd.Args), len(cmd.Args))
+	args := make([]string, 0)
 
-	for i, a := range cmd.Args {
+	for _, a := range cmd.Args {
 		if a != "" {
-			args[i] = a
+			args = append(args, a)
 		}
 	}
 
