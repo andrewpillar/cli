@@ -7,9 +7,12 @@ import (
 )
 
 type Cli struct {
-	cmds       commands
-	flags      flags
-	main       *Command
+	cmds commands
+
+	flags flags
+
+	main *Command
+
 	nilHandler commandHandler
 }
 
@@ -139,7 +142,7 @@ func (c *Cli) parseFlag(i int, arg string, cmd *Command) error {
 }
 
 func (c *Cli) parseLong(i int, arg string, cmd *Command, flag *Flag) error {
-	cmd.Args.remove(i)
+	cmd.Args.set(i, "")
 
 	if flag.Argument {
 		val := ""
@@ -147,7 +150,13 @@ func (c *Cli) parseLong(i int, arg string, cmd *Command, flag *Flag) error {
 		if strings.Contains(arg, "=") {
 			val = strings.Split(arg, "=")[1]
 		} else {
+<<<<<<< HEAD
 			val = cmd.Args.Get(i)
+=======
+			val = cmd.Args.Get(i + 1)
+
+			cmd.Args.set(i + 1, "")
+>>>>>>> parent of 0dc1958... Remove arguments from array instead of replacing them with empty string
 		}
 
 		if val == "" && flag.Default == nil {
@@ -165,10 +174,12 @@ func (c *Cli) parseLong(i int, arg string, cmd *Command, flag *Flag) error {
 }
 
 func (c *Cli) parseShort(i int, arg string, cmd *Command, flag *Flag) error {
-	cmd.Args.remove(i)
+	cmd.Args.set(i, "")
 
 	if flag.Argument {
-		val := cmd.Args.Get(i)
+		val := cmd.Args.Get(i + 1)
+
+		cmd.Args.set(i + 1, "")
 
 		if val == "" && flag.Default == nil {
 			return errors.New("option '" + arg + "' requires an argument")
