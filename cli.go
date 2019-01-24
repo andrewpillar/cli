@@ -150,13 +150,9 @@ func (c *Cli) parseLong(i int, arg string, cmd *Command, flag *Flag) error {
 		if strings.Contains(arg, "=") {
 			val = strings.Split(arg, "=")[1]
 		} else {
-<<<<<<< HEAD
-			val = cmd.Args.Get(i)
-=======
 			val = cmd.Args.Get(i + 1)
 
 			cmd.Args.set(i + 1, "")
->>>>>>> parent of 0dc1958... Remove arguments from array instead of replacing them with empty string
 		}
 
 		if val == "" && flag.Default == nil {
@@ -218,6 +214,16 @@ func (c *Cli) Run(args_ []string) error {
 			}
 		}
 	}
+
+	args := make([]string, len(cmd.Args), len(cmd.Args))
+
+	for i, a := range cmd.Args {
+		if a != "" {
+			args[i] = a
+		}
+	}
+
+	cmd.Args = args
 
 	return cmd.Run(c.nilHandler)
 }
