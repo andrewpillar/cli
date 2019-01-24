@@ -323,3 +323,52 @@ func TestMultipleSameFlag(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestMultipleFlags(t *testing.T) {
+	cli := New()
+
+	cmd := cli.Main(func(c Command) {
+		if !c.Flags.IsSet("flag-one") {
+			t.Errorf("expected flag-one to be set\n")
+		}
+
+		flagTwo := c.Flags.GetString("flag-two")
+
+		if flagTwo != "foo" {
+			t.Errorf("expected flag-two to be foo\n")
+		}
+
+		flagThree, err := c.Flags.GetInt("flag-three")
+
+		if err != nil {
+			t.Error(err)
+		}
+
+		if flagThree != 10 {
+			t.Errorf("expected flag-three to be 10\n")
+		}
+	})
+
+	cmd.AddFlag(&Flag{
+		Name:  "flag-one",
+		Short: "-f",
+	})
+
+	cmd.AddFlag(&Flag{
+		Name:     "flag-two",
+		Short:    "-g",
+		Argument: true,
+	})
+
+	cmd.AddFlag(&Flag{
+		Name:     "flag-three",
+		Short:    "-h",
+		Argument: true,
+	})
+
+	flags := []string{"-g", "foo", "-f", "-h", "10"}
+
+	if err := cli.Run(flags); err != nil {
+		t.Error(err)
+	}
+}
