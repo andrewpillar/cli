@@ -1,4 +1,3 @@
-// Simple library for building CLI applications in Go.
 package cli
 
 import (
@@ -6,30 +5,22 @@ import (
 	"strings"
 )
 
+type args []string
+
 type Cli struct {
-	cmds commands
-
+	cmds  commands
 	flags flags
-
-	main *Command
-
-	nilHandler commandHandler
-}
-
-// New creates a new Cli struct for attaching commands, and flags to. There is
-// no limit to how many of these you can create.
-func New() *Cli {
-	return &Cli{cmds: newCommands(), flags: newFlags()}
+	main  *Command
 }
 
 func addCommand(name string, parent *Command, handler commandHandler, cmds commands) *Command {
 	cmd := &Command{
-		Parent:   parent,
-		Name:     name,
-		Args:     args([]string{}),
-		Flags:    newFlags(),
-		Commands: newCommands(),
-		Handler:  handler,
+		parent:  parent,
+		cmds:    commands(make(map[string]*Command)),
+		handler: handler,
+		Name:    name,
+		Args:    args([]string{}),
+		Flags:   newFlags(),
 	}
 
 	cmds[name] = cmd
@@ -37,19 +28,19 @@ func addCommand(name string, parent *Command, handler commandHandler, cmds comma
 	return cmd
 }
 
-func findCommand(args args, cmds commands, main *Command) (*Command, error) {
-	if len(args) == 0 {
-		if main == nil {
-			return nil, errors.New("failed to find a command")
+func findCommand(argv []string, cmds commands, main *Command) (*Command, error) {
+	if len(argv) == 0 {
+		if main == nil || main.handler == nil {
+			return nil, errors.New("no command to run")
 		}
 
 		return main, nil
 	}
 
-	name := args[0]
+	name := argv[0]
 
 	if strings.HasPrefix(name, "--") || strings.HasPrefix(name, "-") {
-		main.Args = args
+		main.Args = argv
 
 		return main, nil
 	}
@@ -57,88 +48,38 @@ func findCommand(args args, cmds commands, main *Command) (*Command, error) {
 	cmd, ok := cmds[name]
 
 	if !ok {
-		if main == nil || main.Handler == nil {
+		if main == nil {
 			return nil, errors.New("command '" + name + "' not found")
 		}
 
-		main.Args = args
+		main.Args = argv
 
 		return main, nil
 	}
 
-	cmd.Args = args[1:]
+	cmd.Args = argv[1:]
 
-	return findCommand(cmd.Args, cmd.Commands, cmd)
+	return findCommand(cmd.Args, cmd.cmds, cmd)
 }
 
-// AddFlag takes a pointer to a Flag struct, and adds it to the Cli struct
-// marking it as global. This flag will be passed down to every subsequent
-// command added to the Cli struct.
-func (c *Cli) AddFlag(f *Flag) {
-	f.global = true
+func (a args) Get(i int) string {
+	if i >= len(a) {
+		return ""
+	}
 
-	c.flags.expected[f.Name] = f
+	return a[i]
 }
 
-// Command creates a new command for the Cli struct based on the name, and
-// handler given. A pointer to the newly created Command is returned. The name
-// of the command is typically what the user would type in to have the command
-// run.
-func (c *Cli) Command(name string, handler commandHandler) *Command {
-	return addCommand(name, nil, handler, c.cmds)
+func (a *args) set(i int, s string) {
+	if i >= len(*a) {
+		return
+	}
+
+	(*a)[i] = s
 }
 
-// Main specifies the main command to run should no initial command be found
-// upon the first run of the application. This only takes a command handler.
-func (c *Cli) Main(handler commandHandler) *Command {
-	c.main = &Command{
-		Args:     args([]string{}),
-		Flags:    newFlags(),
-		Commands: newCommands(),
-		Handler:  handler,
-	}
-
-	return c.main
-}
-
-// NilHandler specifies a handler to be used for commands which do not have
-// a handler on them. This is useful if you have mulitple sub-commands that
-// perform actions, but whose parent command does not.
-func (c *Cli) NilHandler(handler commandHandler) {
-	c.nilHandler = handler
-}
-
-func (c *Cli) parseFlag(i int, arg string, cmd *Command) error {
-	var flag *Flag
-
-	for _, f := range cmd.Flags.expected {
-		if f.Matches(arg) {
-			flag = f
-			break
-		}
-	}
-
-	if flag == nil {
-		return errors.New("unknown option '" + arg + "'")
-	}
-
-	if strings.HasPrefix(arg, "--") {
-		if err := c.parseLong(i, arg, cmd, flag); err != nil {
-			return err
-		}
-
-		cmd.Flags.putReceived(*flag)
-
-		return nil
-	}
-
-	if err := c.parseShort(i, arg, cmd, flag); err != nil {
-		return err
-	}
-
-	cmd.Flags.putReceived(*flag)
-
-	return nil
+func New() *Cli {
+	return &Cli{cmds: commands(make(map[string]*Command)), flags: newFlags()}
 }
 
 func (c *Cli) parseLong(i int, arg string, cmd *Command, flag *Flag) error {
@@ -152,7 +93,13 @@ func (c *Cli) parseLong(i int, arg string, cmd *Command, flag *Flag) error {
 		} else {
 			val = cmd.Args.Get(i + 1)
 
-			cmd.Args.set(i + 1, "")
+			if !strings.HasPrefix(val, "--") && !strings.HasPrefix(val, "-") {
+				val = cmd.Args.Get(i + 1)
+
+				cmd.Args.set(i + 1, "")
+			} else {
+				val = ""
+			}
 		}
 
 		if val == "" && flag.Default == nil {
@@ -160,12 +107,10 @@ func (c *Cli) parseLong(i int, arg string, cmd *Command, flag *Flag) error {
 		}
 
 		flag.Value = val
-
 		return nil
 	}
 
 	flag.isSet = true
-
 	return nil
 }
 
@@ -182,25 +127,43 @@ func (c *Cli) parseShort(i int, arg string, cmd *Command, flag *Flag) error {
 		}
 
 		flag.Value = val
-
 		return nil
 	}
 
 	flag.isSet = true
-
 	return nil
 }
 
-// Run takes the slice of strings, and parses them as commands and flags.
-func (c *Cli) Run(args_ []string) error {
-	cmd, err := findCommand(args(args_), c.cmds, c.main)
+func (c *Cli) AddFlag(f *Flag) {
+	f.global = true
+
+	c.flags.expected[f.Name] = f
+}
+
+func (c *Cli) Command(name string, handler commandHandler) *Command {
+	return addCommand(name, nil, handler, c.cmds)
+}
+
+func (c *Cli) MainCommand(handler commandHandler) *Command {
+	c.main = &Command{
+		cmds:    commands(make(map[string]*Command)),
+		handler: handler,
+		Args:    args([]string{}),
+		Flags:   newFlags(),
+	}
+
+	return c.main
+}
+
+func (c *Cli) Run(argv []string) error {
+	cmd, err := findCommand(args(argv), c.cmds, c.main)
 
 	if err != nil {
 		return err
 	}
 
-	for _, f := range c.flags.expected {
-		cmd.AddFlag(f)
+	for _, flag := range c.flags.expected {
+		cmd.AddFlag(flag)
 	}
 
 	for i, arg := range cmd.Args {
@@ -209,21 +172,41 @@ func (c *Cli) Run(args_ []string) error {
 		}
 
 		if strings.HasPrefix(arg, "--") || strings.HasPrefix(arg, "-") {
-			if err = c.parseFlag(i, arg, cmd); err != nil {
+			var flag *Flag
+
+			for _, f := range cmd.Flags.expected {
+				if f.matches(arg) {
+					flag = f
+					break
+				}
+			}
+
+			if flag == nil {
+				return errors.New("unknown option '" + arg + "'")
+			}
+
+			if strings.HasPrefix(arg, "--") {
+				if err := c.parseLong(i, arg, cmd, flag); err != nil {
+					return err
+				}
+			} else if err := c.parseShort(i, arg, cmd, flag); err != nil {
 				return err
 			}
+
+			cmd.Flags.received[flag.Name] = append(cmd.Flags.received[flag.Name], *flag)
 		}
 	}
 
-	args := make([]string, 0)
+	trimmed := make([]string, 0, len(argv))
 
 	for _, a := range cmd.Args {
 		if a != "" {
-			args = append(args, a)
+			trimmed = append(trimmed, a)
 		}
 	}
 
-	cmd.Args = args
+	cmd.Args = trimmed
+	cmd.Run()
 
-	return cmd.Run(c.nilHandler)
+	return nil
 }
