@@ -5,55 +5,24 @@ import (
 	"strings"
 )
 
-type flagHandler func(f Flag, c Command)
-
 type flags struct {
 	expected map[string]*Flag
-
 	received map[string][]Flag
 }
 
+type flagHandler func(f Flag, c Command)
+
 type Flag struct {
-	isSet bool
-
-	global bool
-
-	// Name specifies the name of the flag. This should be a string, and will
-	// be what is used to access the flag when passed to the command's handler.
-	Name string
-
-	// Short specifies the short version of a flag, for example '-h'.
-	Short string
-
-	// Long specifies the long version of a flag, for example '--help'.
-	Long string
-
-	// Argument specifies whether or not the flag takes an argument.
-	Argument bool
-
-	// If the flag takes an argument then the Value property will be set during
-	// parsing of the input arguments.
-	Value string
-
-	// Default specifies the default value the flag should be if no value is
-	// given to the flag. This is an interface, and before accessing the flag's
-	// value you should know what it's expected type should be.
-	Default interface{}
-
-	// Exclusive specifies whether or not a flag with a handler should be
-	// exclusive in its execution. Setting this to true means that no command
-	// will be executed if an exclusive flag, with a handler has been set on
-	// that command, and passed to that command.
-	//
-	// For example, the '--help' flag could be considered an exclusive flag.
-	// When passed to a command you do not want the command itself to be
-	// executed along with the '--help' flag.
+	handler   flagHandler
+	isSet     bool
+	global    bool
+	Name      string
+	Short     string
+	Long      string
+	Argument  bool
+	Value     string
+	Default   interface{}
 	Exclusive bool
-
-	// Handler specifies the handler for the flag should a flag be given to
-	// a command. This handler will be passed the flag itself, and the command
-	// on which the flag was passed.
-	Handler flagHandler
 }
 
 func newFlags() flags {
@@ -63,80 +32,176 @@ func newFlags() flags {
 	}
 }
 
-func (f *flags) putReceived(received Flag) {
-	f.received[received.Name] = append(f.received[received.Name], received)
+func (f Flag) matches(arg string) bool {
+	if strings.Contains(arg, "=") {
+		arg = strings.Split(arg, "=")[0]
+	}
+
+	return f.Short == arg || f.Long == arg
+}
+
+func (f Flag) getFloat(bitSize int) (float64, error) {
+	if f.Value == "" {
+		if f.Default == nil {
+			return 0.0, nil
+		}
+
+		return f.Default.(float64), nil
+	}
+
+	fl, err := strconv.ParseFloat(f.Value, bitSize)
+
+	if err != nil {
+		return 0.0, err
+	}
+
+	return fl, nil
+}
+
+func (f Flag) getInt(bitSize int) (int64, error) {
+	if f.Value == "" {
+		if f.Default == nil {
+			return 0, nil
+		}
+
+		return f.Default.(int64), nil
+	}
+
+	i, err := strconv.ParseInt(f.Value, 10, bitSize)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return i, nil
+}
+
+func (f Flag) GetFloat32() (float32, error) {
+	fl, err := f.getFloat(32)
+
+	if err != nil {
+		return 0.0, err
+	}
+
+	return float32(fl), nil
+}
+
+func (f Flag) GetFloat64() (float64, error) {
+	fl, err := f.getFloat(64)
+
+	if err != nil {
+		return 0.0, err
+	}
+
+	return fl, nil
+}
+
+func (f Flag) GetInt() (int, error) {
+	i, err := f.getInt(0)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return int(i), err
+}
+
+func (f Flag) GetInt8() (int8, error) {
+	i, err := f.getInt(8)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return int8(i), err
+}
+
+func (f Flag) GetInt16() (int16, error) {
+	i, err := f.getInt(16)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return int16(i), err
+}
+
+func (f Flag) GetInt32() (int32, error) {
+	i, err := f.getInt(32)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return int32(i), err
+}
+
+func (f Flag) GetInt64() (int64, error) {
+	i, err := f.getInt(64)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return i, err
+}
+
+func (f Flag) GetString() string {
+	if f.Value == "" && f.Default != nil {
+		return f.Default.(string)
+	}
+
+	return f.Value
+}
+
+func (f Flag) IsSet() bool {
+	return f.isSet
+}
+
+func (f flags) first(name string) Flag {
+	flags := f.GetAll(name)
+
+	if len(flags) > 0 {
+		return flags[0]
+	}
+
+	return *f.expected[name]
 }
 
 func (f flags) GetAll(name string) []Flag {
 	return f.received[name]
 }
 
-func (f flags) GetInt64(name string) (int64, error) {
-	i, err := f.GetInt(name)
+func (f flags) GetInt(name string) (int, error) {
+	return f.first(name).GetInt()
+}
 
-	if err != nil {
-		return 0, err
-	}
+func (f flags) GetInt8(name string) (int8, error) {
+	return f.first(name).GetInt8()
+}
 
-	return int64(i), nil
+func (f flags) GetInt16(name string) (int16, error) {
+	return f.first(name).GetInt16()
 }
 
 func (f flags) GetInt32(name string) (int32, error) {
-	i, err := f.GetInt64(name)
-
-	if err != nil {
-		return 0, err
-	}
-
-	return int32(i), nil
+	return f.first(name).GetInt32()
 }
 
-func (f flags) GetInt(name string) (int, error) {
-	flag := *f.expected[name]
-	flags := f.GetAll(name)
-
-	if len(flags) > 0 {
-		flag = flags[0]
-	}
-
-	if flag.Value == "" {
-		if flag.Default == nil {
-			return 0, nil
-		}
-
-		return flag.Default.(int), nil
-	}
-
-	i, err := strconv.ParseInt(flag.Value, 10, 64)
-
-	if err != nil {
-		return 0, err
-	}
-
-	return int(i), nil
+func (f flags) GetInt64(name string) (int64, error) {
+	return f.first(name).GetInt64()
 }
 
-func (f flags) GetSlice(name, sep string) []string {
-	return strings.Split(f.GetString(name), sep)
+func (f flags) GetFloat32(name string) (float32, error) {
+	return f.first(name).GetFloat32()
+}
+
+func (f flags) GetFloat64(name string) (float64, error) {
+	return f.first(name).GetFloat64()
 }
 
 func (f flags) GetString(name string) string {
-	flag := *f.expected[name]
-	flags := f.GetAll(name)
-
-	if len(flags) > 0 {
-		flag = flags[0]
-	}
-
-	if flag.Value == "" {
-		if flag.Default == nil {
-			return ""
-		}
-
-		return flag.Default.(string)
-	}
-
-	return flag.Value
+	return f.first(name).GetString()
 }
 
 func (f flags) IsSet(name string) bool {
@@ -147,14 +212,4 @@ func (f flags) IsSet(name string) bool {
 	}
 
 	return flags[0].isSet
-}
-
-// Matches determins if the given argument matches against the current flag,
-// based on the short, and long values of the current flag.
-func (f Flag) Matches(arg string) bool {
-	if strings.Contains(arg, "=") {
-		arg = strings.Split(arg, "=")[0]
-	}
-
-	return f.Short == arg || f.Long == arg
 }
