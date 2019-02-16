@@ -232,3 +232,24 @@ func TestCommandFlagNumberValues(t *testing.T) {
 
 	assert.Nilf(t, err, "Expected cli.Run to not error, it did: %s\n", err)
 }
+
+func TestCommandFlagHandler(t *testing.T) {
+	argv := []string{"--help"}
+
+	cli := New()
+
+	cli.AddFlag(&Flag{
+		Name:      "help",
+		Long:      "--help",
+		Exclusive: true,
+		Handler:   func(f Flag, cmd Command) {},
+	})
+
+	cli.MainCommand(func(cmd Command) {
+		assert.FailNowf(t, "command should not have executed\n", cmd.Name)
+	})
+
+	err := cli.Run(argv)
+
+	assert.Nilf(t, err, "Expected cli.Run to not error, it did: %s\n", err)
+}
