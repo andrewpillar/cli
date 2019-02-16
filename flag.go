@@ -18,33 +18,36 @@ type Flag struct {
 	global    bool
 	value     string
 
-	// The name of the flag. This is used to retrieve the flag from the flags type that stores
-	// either the program's flags, or a command's flags.
+	// The name of the flag. This is used to retrieve the flag from the flags
+	// type that stores either the program's flags, or a command's flags.
 	Name string
 
-	// The short version of the flag. Typically a single letter value preprended with a single '-'.
+	// The short version of the flag. Typically a single letter value preprended
+	// with a single '-'.
 	Short string
 
-	// The long version of the flag. Typically a hyphenated string value prepended with a '--'.
+	// The long version of the flag. Typically a hyphenated string value
+	// prepended with a '--'.
 	Long string
 
-	// Whether the flag takes an argument. If set to true, then the flag's argument will be parsed
-	// from the input strings. Listed below are the three valid ways of specifying a flag's value:
+	// Whether the flag takes an argument. If set to true, then the flag's
+	// argument will be parsed from the input strings. Listed below are the
+	// three valid ways of specifying a flag's value:
 	//
 	//  -f arg
 	//  --flag arg
 	//  --flag=arg
 	Argument  bool
 
-	// The default value of the flag if no value is given to the flag itself during program
-	// program invocation.
+	// The default value of the flag if no value is given to the flag itself
+	// during program program invocation.
 	Default   interface{}
 
 	// The handler to invoke whenever the flag is set.
 	Handler   flagHandler
 
-	// If a flag is exclusive then the flag's handler will be invoked, and the flag's command will
-	// not be invoked.
+	// If a flag is exclusive then the flag's handler will be invoked, and the
+	// flag's command will not be invoked.
 	Exclusive bool
 }
 
