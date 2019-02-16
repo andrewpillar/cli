@@ -7,6 +7,7 @@ import (
 
 type args []string
 
+// The CLI program itsel, this stores all of the program commands, and program level flags.
 type Cli struct {
 	cmds  commands
 	flags flags
@@ -62,8 +63,15 @@ func findCommand(argv []string, cmds commands, main *Command) (*Command, error) 
 	return findCommand(cmd.Args, cmd.cmds, cmd)
 }
 
+// Create a new CLI program.
+func New() *Cli {
+	return &Cli{cmds: commands(make(map[string]*Command)), flags: newFlags()}
+}
+
+// Get the argument at the given index position. If the given index is out of bounds, then an empty
+// string is returned.
 func (a args) Get(i int) string {
-	if i >= len(a) {
+	if i >= len(a) || i < 0 {
 		return ""
 	}
 
@@ -76,10 +84,6 @@ func (a *args) set(i int, s string) {
 	}
 
 	(*a)[i] = s
-}
-
-func New() *Cli {
-	return &Cli{cmds: commands(make(map[string]*Command)), flags: newFlags()}
 }
 
 func (c *Cli) parseLong(i int, arg string, cmd *Command, flag *Flag) error {
@@ -106,7 +110,7 @@ func (c *Cli) parseLong(i int, arg string, cmd *Command, flag *Flag) error {
 			return errors.New("option '" + arg + "' requires an argument")
 		}
 
-		flag.Value = val
+		flag.value = val
 		return nil
 	}
 
@@ -126,7 +130,7 @@ func (c *Cli) parseShort(i int, arg string, cmd *Command, flag *Flag) error {
 			return errors.New("option '" + arg + "' requires an argument")
 		}
 
-		flag.Value = val
+		flag.value = val
 		return nil
 	}
 
@@ -134,16 +138,20 @@ func (c *Cli) parseShort(i int, arg string, cmd *Command, flag *Flag) error {
 	return nil
 }
 
+// Add a flag to the entire program. This will be passed down to every other command in the program.
 func (c *Cli) AddFlag(f *Flag) {
 	f.global = true
 
 	c.flags.expected[f.Name] = f
 }
 
+// Add a command to the program, with the given name.
 func (c *Cli) Command(name string, handler commandHandler) *Command {
 	return addCommand(name, nil, handler, c.cmds)
 }
 
+// Set the program's main command. This is invoked if no command can be found for running the
+// program.
 func (c *Cli) MainCommand(handler commandHandler) *Command {
 	c.main = &Command{
 		cmds:    commands(make(map[string]*Command)),
@@ -155,6 +163,12 @@ func (c *Cli) MainCommand(handler commandHandler) *Command {
 	return c.main
 }
 
+// Run the CLI program using the given slice of argument strings. This assumes that the programs
+// name itself has been removed from the start of the input slice.
+//
+//   err := c.Run(os.Args[1:])
+//
+// The errors returned from this method will be about unknown program commands or unknown flags
 func (c *Cli) Run(argv []string) error {
 	cmd, err := findCommand(args(argv), c.cmds, c.main)
 
