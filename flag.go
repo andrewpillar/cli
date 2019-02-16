@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-type flags struct {
+type Flags struct {
 	expected map[string]*Flag
 	received map[string][]Flag
 }
@@ -51,8 +51,8 @@ type Flag struct {
 	Exclusive bool
 }
 
-func newFlags() flags {
-	return flags{
+func newFlags() Flags {
+	return Flags{
 		expected: make(map[string]*Flag),
 		received: make(map[string][]Flag),
 	}
@@ -193,7 +193,7 @@ func (f Flag) IsSet() bool {
 	return f.isSet
 }
 
-func (f flags) first(name string) Flag {
+func (f Flags) first(name string) Flag {
 	flags := f.GetAll(name)
 
 	if len(flags) > 0 {
@@ -204,52 +204,52 @@ func (f flags) first(name string) Flag {
 }
 
 // Get all of the flags for the given flag name.
-func (f flags) GetAll(name string) []Flag {
+func (f Flags) GetAll(name string) []Flag {
 	return f.received[name]
 }
 
 // Attempt to parse the first flag's value as an int for the given flag name.
-func (f flags) GetInt(name string) (int, error) {
+func (f Flags) GetInt(name string) (int, error) {
 	return f.first(name).GetInt()
 }
 
 // Attempt to parse the first flag's value as an int8 for the given flag name.
-func (f flags) GetInt8(name string) (int8, error) {
+func (f Flags) GetInt8(name string) (int8, error) {
 	return f.first(name).GetInt8()
 }
 
 // Attempt to parse the first flag's value as an int16 for the given flag name.
-func (f flags) GetInt16(name string) (int16, error) {
+func (f Flags) GetInt16(name string) (int16, error) {
 	return f.first(name).GetInt16()
 }
 
 // Attempt to parse the first flag's value as an int32 for the given flag name.
-func (f flags) GetInt32(name string) (int32, error) {
+func (f Flags) GetInt32(name string) (int32, error) {
 	return f.first(name).GetInt32()
 }
 
 // Attempt to parse the first flag's value as an int64 for the given flag name.
-func (f flags) GetInt64(name string) (int64, error) {
+func (f Flags) GetInt64(name string) (int64, error) {
 	return f.first(name).GetInt64()
 }
 
 // Attempt to parse the first flag's value as a float32 for the given flag name.
-func (f flags) GetFloat32(name string) (float32, error) {
+func (f Flags) GetFloat32(name string) (float32, error) {
 	return f.first(name).GetFloat32()
 }
 
 // Attempt to parse the first flag's value as a float64 for the given flag name.
-func (f flags) GetFloat64(name string) (float64, error) {
+func (f Flags) GetFloat64(name string) (float64, error) {
 	return f.first(name).GetFloat64()
 }
 
 // Get the underlying flag value as a string for the given flag name.
-func (f flags) GetString(name string) string {
+func (f Flags) GetString(name string) string {
 	return f.first(name).GetString()
 }
 
 // Return whether the flag has been set for the given flag name.
-func (f flags) IsSet(name string) bool {
+func (f Flags) IsSet(name string) bool {
 	flags := f.GetAll(name)
 
 	if len(flags) == 0 {

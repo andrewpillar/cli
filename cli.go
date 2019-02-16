@@ -11,7 +11,7 @@ type args []string
 // level flags.
 type Cli struct {
 	cmds  commands
-	flags flags
+	flags Flags
 	main  *Command
 }
 
