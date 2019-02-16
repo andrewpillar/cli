@@ -27,7 +27,7 @@ type Command struct {
 	// The flags that have been added to the command. Starting out this will be
 	// empty much like the command arguments. During parsing the command flags
 	// will be set accordingly, whether they be value flags or boolean flags.
-	Flags flags
+	Flags Flags
 }
 
 // Create a new command with the given name, and given command handler.
