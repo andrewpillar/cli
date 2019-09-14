@@ -20,6 +20,25 @@ func TestMainCommand(t *testing.T) {
 	assert.Nilf(t, err, "Expected cli.Run to not error, it did: %s\n", err)
 }
 
+func TestNoMoreFlags(t *testing.T) {
+	argv := []string{"-f", "--", "-f"}
+
+	cli := New()
+
+	cli.MainCommand(func(cmd Command) {
+		assert.Equal(t, cmd.Args[0], "-f", "Expected cmd.Args[0] to be -f, it was %s\n", cmd.Args[0])
+	})
+
+	cli.AddFlag(&Flag{
+		Name:  "foo",
+		Short: "-f",
+	})
+
+	err := cli.Run(argv)
+
+	assert.Nilf(t, err, "Expected cli.Run to not error, it did: %s\n", err)
+}
+
 func TestCommandNilHandler(t *testing.T) {
 	cmdName := "cmd-no-handler"
 

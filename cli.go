@@ -187,6 +187,7 @@ func (c *Cli) Run(argv []string) error {
 
 	for i, arg := range cmd.Args {
 		if arg == "--" {
+			cmd.Args[i] = ""
 			break
 		}
 
